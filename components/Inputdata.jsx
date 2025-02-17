@@ -1,32 +1,22 @@
-import * as React from "react";
-import {
-  StyleSheet,
-  Text,
-  View,
-  SafeAreaView,
-  TextInput,
-  Image,
-  TouchableOpacity,
-  ScrollView,
-} from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
-import Btn from "./Btn";
+import React from "react";
+import { StyleSheet, TextInput, View } from "react-native";
+import PropTypes from "prop-types";
 import COLORS from "../constants/colors";
-import Card from "./Card";
-import Floatinbutton from "./Floatinbutton";
-import Cathorisonal from "../components/Cathorisonal";
+import styles from "../styles/InputData";
 
 const Inputdata = ({ maxCharacters, placeholder, setText }) => {
   return (
-    <View>
+    <View style={styles.container}>
       <TextInput
         editable
         multiline
         numberOfLines={4}
         maxLength={maxCharacters}
         placeholder={placeholder}
-        onChangeText={(text) => setText(text)}
-        style={{ padding: 10, borderRadius: 25, backgroundColor: COLORS.white }}
+        placeholderTextColor={COLORS.gray} // Color del placeholder
+        onChangeText={setText} // Se pasa directamente sin función inline
+        style={styles.input}
+        autoCapitalize="none"
       />
     </View>
   );
