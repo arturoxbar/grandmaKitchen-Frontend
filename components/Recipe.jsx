@@ -10,6 +10,7 @@ import {
 import Icon from "react-native-vector-icons/FontAwesome";
 import COLORS from "../constants/colors";
 import styles from "../styles/Recipe";
+import Modalboolean from "./Modalboolean";
 
 export default function Recipe({ title, image, general }) {
   const [modalVisible, setModalVisible] = useState(false); // Estado para mostrar/ocultar el modal
@@ -23,7 +24,7 @@ export default function Recipe({ title, image, general }) {
   };
 
   const handleDelete = () => {
-    alert("to do");
+    alert("to do")
     setModalVisible(true); // Mostrar el modal cuando se haga clic en el botón de eliminar
   };
 
