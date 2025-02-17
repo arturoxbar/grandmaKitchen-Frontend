@@ -4,23 +4,54 @@ import {
   Text,
   View,
   SafeAreaView,
-  TextInput,
-  Image,
-  TouchableOpacity,
   ScrollView,
+  TouchableOpacity,
 } from "react-native";
-//import { LinearGradient } from "expo-linear-gradient";
-//import Btn from "../components/Btn";
 import COLORS from "../constants/colors";
-//import Card from "../components/Card";
 import Floatinbutton from "../components/Floatinbutton";
 import Cathorisonal from "../components/Cathorisonal";
-import Recet from "../components/Recet";
+import Recipe from "../components/Recipe";
 import { useState } from "react";
 
 const Home = ({ navigation }) => {
   const [toggleFav, setToggleFav] = useState(false);
   const [toggleCat, setToggleCat] = useState("");
+
+  const notes = [
+    {
+      id: 1,
+      title: "Do you want chicken?",
+      image:
+        "https://hips.hearstapps.com/hmg-prod/images/roast-chicken-recipe-2-66b231ac9a8fb.jpg?crop=0.503xw:1.00xh;0.309xw,0&resize=1200:*",
+
+    },
+    {
+      id: 2,
+      title: "Spaghetti Bolognese",
+      image:
+        "https://www.recipetineats.com/tachyon/2018/07/Spaghetti-Bolognese.jpg",
+
+    },
+    {
+      id: 3,
+      title: "Chocolate Cake",
+      image:
+        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSbKYwL3WVVNJ6mhZTD9vNqjZGnnKVXA14mCg&s",
+
+    },
+    {
+      id: 4,
+      title: "Vegetable Stir Fry",
+      image:
+        "https://natashaskitchen.com/wp-content/uploads/2020/08/Vegetable-Stir-Fry-2-728x1092.jpg",
+
+    },
+  ];
+
+  const openRecipe = () => {
+    alert("test");
+  };
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.paper }}>
       <View
@@ -40,15 +71,28 @@ const Home = ({ navigation }) => {
             marginBottom: 20,
           }}
         >
-          grandma's recipes
+          Grandma's Recipes
         </Text>
       </View>
       <View style={{ flexDirection: "row", marginBottom: "5%" }}>
         <Cathorisonal setToggleCat={setToggleCat} />
       </View>
-      <ScrollView style={{ height: "90%" }}>
-        <Recet />
+
+      <ScrollView style={{ height: "85%" }}>
+        {notes.map((note) => (
+          <TouchableOpacity
+            key={note.id}
+            onPress={() => openRecipe()} // Evento de toque que navega a la receta
+          >
+            <Recipe
+              title={note.title}
+              image={note.image}
+              general={note.general}
+            />
+          </TouchableOpacity>
+        ))}
       </ScrollView>
+
       <View>
         <Floatinbutton setToggleFav={setToggleFav} />
       </View>
