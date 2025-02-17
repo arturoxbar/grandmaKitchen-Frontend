@@ -1,6 +1,6 @@
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { Login, Signup, Welcome } from "./screens/index";
+import * as screens from "./screens/index";
 
 const Stack = createNativeStackNavigator();
 export default function App() {
@@ -9,14 +9,14 @@ export default function App() {
       <Stack.Navigator initialRouteName="Welcome">
         <Stack.Screen
           name="Welcome"
-          component={Welcome}
+          component={screens.Welcome}
           options={{
             headerShown: false,
           }}
         />
         <Stack.Screen
           name="Login"
-          component={Login}
+          component={screens.Login}
           options={{
             headerShown: false,
           }}
@@ -24,7 +24,23 @@ export default function App() {
 
         <Stack.Screen
           name="Signup"
-          component={Signup}
+          component={screens.Signup}
+          options={{
+            headerShown: false,
+          }}
+        />
+
+        <Stack.Screen
+          name="Home"
+          component={screens.Home}
+          options={{
+            headerShown: false,
+          }}
+        />
+
+        <Stack.Screen
+          name="CreateEditRecipe"
+          component={screens.CreateEdit}
           options={{
             headerShown: false,
           }}
