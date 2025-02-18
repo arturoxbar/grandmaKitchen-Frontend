@@ -15,10 +15,51 @@ import Btn from "../components/Btn";
 import COLORS from "../constants/colors";
 import { useEffect, useState } from "react";
 import textura from "../assets/textura_libro2.png";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { AxiosInstance, UserEndpoints } from "../config/axios";
 
 const Login = ({ navigation }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+  const checkSession = async () => {
+    const token = await AsyncStorage.getItem("token");
+    if (token) {
+      Alert.alert("Success", "Welcome back", [{ text: "OK" }]);
+      navigation.navigate("Home");
+    }
+  };
+
+  useEffect(() => {
+    checkSession();
+  }, []);
+
+  const handleLogin = async () => {
+    if (!email || !password) {
+      return alert("All fields are required.");
+    }
+    const body = {
+      email: email,
+      password: password,
+    };
+
+    console.log(body);
+
+    try {
+      const response = await AxiosInstance.post(UserEndpoints.login, body);
+      console.log(response.data.token);
+      await AsyncStorage.setItem("token", response.data.token);
+      setEmail("");
+      setPassword("");
+      Alert.alert("Success", "User logged in", [{ text: "OK" }]);
+      navigation.navigate("Home");
+    } catch (error) {
+      console.log(error);
+      const errors = error.response.data.message;
+      Alert.alert("error", errors);
+      console.log(errors);
+    }
+  };
 
   return (
     <SafeAreaView style={{ backgroundColor: COLORS.strong_blue }}>
@@ -79,11 +120,11 @@ const Login = ({ navigation }) => {
                   marginVertical: 10,
                 }}
                 placeholderTextColor={COLORS.yellow}
-                placeholder="E-mail/user"
+                placeholder="E-mail"
                 value={email}
                 onChangeText={(email) => setEmail(email)}
                 keyboardType={"email-address"}
-              ></TextInput>
+              />
 
               <TextInput
                 textAlign={"center"}
@@ -102,7 +143,7 @@ const Login = ({ navigation }) => {
                 value={password}
                 onChangeText={(password) => setPassword(password)}
                 secureTextEntry={true}
-              ></TextInput>
+              />
               <View
                 style={{
                   alignItems: "flex-end",
@@ -126,7 +167,9 @@ const Login = ({ navigation }) => {
                   Colorbtn={COLORS.strong_blue}
                   textColor={COLORS.yellow}
                   btnLabel="Login"
-                  Press={() => {}}
+                  Press={() => {
+                    handleLogin();
+                  }}
                 />
 
                 <View
