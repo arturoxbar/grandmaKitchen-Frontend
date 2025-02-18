@@ -7,17 +7,69 @@ import {
   TouchableOpacity,
   ScrollView,
   ImageBackground,
+  Alert,
 } from "react-native";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Btn from "../components/Btn";
 import COLORS from "../constants/colors";
 import textura from "../assets/textura_libro2.png";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { AxiosInstance, UserEndpoints } from "../config/axios";
 
 const Signup = ({ navigation }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
-  const [password2, setPassword2] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+  const checkSession = async () => {
+    const token = await AsyncStorage.getItem("token");
+    if (token) {
+      Alert.alert("Success", "Welcome back", [{ text: "OK" }]);
+      navigation.navigate("Home");
+    }
+  };
+
+  useEffect(() => {
+    checkSession();
+  }, []);
+
+  const handleSignup = async () => {
+    if (!username || !email || !password || !confirmPassword) {
+      return alert("All fields are required.");
+    }
+    if (!emailRegex.test(email)) {
+      return alert("Invalid email format.");
+    }
+    if (password !== confirmPassword) {
+      return alert("Passwords do not match.");
+    }
+
+    const body = {
+      email: email,
+      password: password,
+      username: username,
+    };
+
+    console.log(body);
+
+    try {
+      const response = await AxiosInstance.post(UserEndpoints.create, body);
+      setConfirmPassword("");
+      setEmail("");
+      setUsername("");
+      setPassword("");
+      alert("user created");
+      navigation.navigate("Login");
+    } catch (error) {
+      console.log(error);
+      const errors = error.response.data.message;
+      Alert.alert("error", errors);
+      console.log(errors);
+    }
+  };
 
   return (
     <SafeAreaView style={{ backgroundColor: COLORS.strong_blue }}>
@@ -75,7 +127,7 @@ const Signup = ({ navigation }) => {
                   value={username}
                   onChangeText={(username) => setUsername(username)}
                   keyboardType={"email-address"}
-                ></TextInput>
+                />
 
                 <TextInput
                   textAlign={"center"}
@@ -95,7 +147,7 @@ const Signup = ({ navigation }) => {
                   value={email}
                   onChangeText={(email) => setEmail(email)}
                   keyboardType={"email-address"}
-                ></TextInput>
+                />
 
                 <TextInput
                   textAlign={"center"}
@@ -115,7 +167,7 @@ const Signup = ({ navigation }) => {
                   value={password}
                   onChangeText={(password) => setPassword(password)}
                   secureTextEntry={true}
-                ></TextInput>
+                />
 
                 <TextInput
                   textAlign={"center"}
@@ -132,10 +184,12 @@ const Signup = ({ navigation }) => {
                   }}
                   placeholderTextColor={COLORS.yellow}
                   placeholder=" Confirm Password"
-                  value={password2}
-                  onChangeText={(password2) => setPassword2(password2)}
+                  value={confirmPassword}
+                  onChangeText={(confirmPassword) =>
+                    setConfirmPassword(confirmPassword)
+                  }
                   secureTextEntry={true}
-                ></TextInput>
+                />
               </View>
 
               <View style={{ width: "78%" }}>
@@ -144,7 +198,9 @@ const Signup = ({ navigation }) => {
                   Colorbtn={COLORS.strong_blue}
                   textColor={COLORS.yellow}
                   btnLabel="Signup"
-                  Press={() => {}}
+                  Press={() => {
+                    handleSignup();
+                  }}
                 />
                 <View
                   style={{
