@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const AxiosInstance = axios.create({
-  baseURL: "http://192.168.1.117:7338/api/v1",
+  baseURL: "http://192.168.1.128:7338/api/v1",
   timeout: 2000,
   headers: {
     "Content-Type": "application/json",
@@ -13,4 +13,10 @@ const UserEndpoints = {
   login: "/users/login",
 };
 
-export { AxiosInstance, UserEndpoints };
+const recipeEndpoints = {
+  create: "/recipes/",
+  getUserRecipes: "/recipes/user",
+};
+
+
+export { AxiosInstance, UserEndpoints, recipeEndpoints };
