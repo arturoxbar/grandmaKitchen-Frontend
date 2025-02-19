@@ -12,29 +12,70 @@ import {
   Platform,
 } from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome";
-
 import Btn from "../components/Btn";
-import Card from "../components/Card";
-import Modalwrite from "../components/Modalwrite";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import Seletcat from "../components/Selectcat";
+import IngredientsSection from "../components/Ingridients.jsx"; // si ya lo tienes separado
+import StepsSection from "../components/Steps"; // Importamos el nuevo componente
 import COLORS from "../constants/colors";
-import textura from "../assets/textura_libro2.png";
+import textura from "../assets/paper.jpg";
 import styles from "../styles/CreateEdit.js";
+import { AxiosInstance, recipeEndpoints } from "../config/axios";
 
 const CreateEdit = ({ navigation }) => {
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [category, setCategory] = useState([]);
+  const [steps, setSteps] = useState([]);
+  const [token, setToken] = useState("");
+  const [ingredients, setIngredients] = useState([]);
 
-  const Section = ({ title }) => (
-    <View style={styles.sectionContainer}>
-      <View style={styles.sectionTextContainer}>
-        <Text style={styles.sectionTitle}>{title}</Text>
-      </View>
-      <TouchableOpacity style={styles.sectionIcon}>
-        <Modalwrite Modalicon="plus" title={title} />
-      </TouchableOpacity>
-      <Card titlecart={title} />
-    </View>
-  );
+  useEffect(() => {
+    const getSession = async () => {
+      await AsyncStorage.getItem("token").then((token) => {
+        setToken(token);
+      });
+    };
+    getSession();
+  }, []);
 
+  const CreateRecipe = async () => {
+    if (!title || !description || !priority) {
+      alert("Please fill all the fields");
+      return;
+    }
+    const concatenatedSteps = steps
+      .map((step, index) => `${index + 1}. ${step}`)
+      .join(", ");
+    const concatenatedIngredients = ingredients
+      .map((ing, index) => `${index + 1}. ${ing}`)
+      .join(", ");
+
+    const body = {
+      name: title,
+      description,
+      steps: concatenatedSteps,
+      ingridients: concatenatedIngredients,
+    };
+
+    try {
+      console.log("recipe data:", body);
+      const response = await AxiosInstance.post(recipeEndpoints.create, body, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      console.log(response.data);
+      setCategory("");
+      setDescription("");
+      setIngredients("");
+      setSteps("");
+      setTitle("");
+      navigation.navigate("Home");
+    } catch (error) {
+      console.error(error);
+    }
+  };
   return (
     <SafeAreaView style={styles.container}>
       <ImageBackground source={textura} style={styles.background}>
@@ -65,16 +106,30 @@ const CreateEdit = ({ navigation }) => {
 
             <Seletcat setCategory={setCategory} />
 
-            <Section title="Description" />
-            <Section title="Ingredients" />
-            <Section title="Intrutions" />
+            <TextInput
+              placeholder="Recipe Description"
+              placeholderTextColor={COLORS.yellow}
+              style={styles.descriptionInput}
+              maxLength={150}
+              editable
+              multiline
+              numberOfLines={4}
+              onChangeText={setDescription}
+            />
+
+            <IngredientsSection
+              ingredients={ingredients}
+              onChangeIngredients={setIngredients}
+            />
+
+            <StepsSection steps={steps} onChangeSteps={setSteps} />
 
             <Btn
               borderColorbtn={COLORS.yellow}
               Colorbtn={COLORS.yellow}
               textColor={COLORS.strong_blue}
               btnLabel="Create Recipe"
-              Press={CreateNote}
+              Press={CreateRecipe}
             />
           </ScrollView>
         </KeyboardAvoidingView>
