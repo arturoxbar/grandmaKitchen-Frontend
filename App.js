@@ -39,8 +39,32 @@ export default function App() {
         />
 
         <Stack.Screen
-          name="CreateEditRecipe"
+          name="CreateRecipe"
           component={screens.CreateEdit}
+          options={{
+            headerShown: false,
+          }}
+        />
+
+        <Stack.Screen
+          name="RecipeDetails"
+          component={screens.RecipeDetails}
+          options={{
+            headerShown: false,
+          }}
+        />
+
+        <Stack.Screen
+          name="User"
+          component={screens.User}
+          options={{
+            headerShown: false,
+          }}
+        />
+
+        <Stack.Screen
+          name="RecoverPassword"
+          component={screens.RecoverPassword}
           options={{
             headerShown: false,
           }}
