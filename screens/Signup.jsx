@@ -21,6 +21,7 @@ const Signup = ({ navigation }) => {
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [secret, setSecret] = useState("");
 
   const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
@@ -37,7 +38,7 @@ const Signup = ({ navigation }) => {
   }, []);
 
   const handleSignup = async () => {
-    if (!username || !email || !password || !confirmPassword) {
+    if (!username || !email || !password || !confirmPassword || !secret) {
       return alert("All fields are required.");
     }
     if (!emailRegex.test(email)) {
@@ -51,6 +52,7 @@ const Signup = ({ navigation }) => {
       email: email,
       password: password,
       username: username,
+      secret: secret,
     };
 
     console.log(body);
@@ -94,7 +96,6 @@ const Signup = ({ navigation }) => {
                 backgroundColor: COLORS.paper,
                 width: "100%",
                 height: "100%",
-                borderTopLeftRadius: 120,
                 paddingTop: 50,
               }}
             >
@@ -188,6 +189,26 @@ const Signup = ({ navigation }) => {
                   onChangeText={(confirmPassword) =>
                     setConfirmPassword(confirmPassword)
                   }
+                  secureTextEntry={true}
+                />
+
+                <TextInput
+                  textAlign={"center"}
+                  style={{
+                    height: 48,
+                    borderRadius: 20,
+                    borderWidth: 2,
+                    borderColor: COLORS.strong_blue,
+                    color: COLORS.yellow,
+                    paddingHorizontal: 10,
+                    width: "80%",
+                    backgroundColor: COLORS.grayish_white,
+                    marginVertical: 10,
+                  }}
+                  placeholderTextColor={COLORS.yellow}
+                  placeholder="Secret phrase"
+                  value={secret}
+                  onChangeText={(secret) => setSecret(secret)}
                   secureTextEntry={true}
                 />
               </View>
