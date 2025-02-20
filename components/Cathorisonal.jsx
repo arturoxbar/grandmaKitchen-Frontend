@@ -2,73 +2,117 @@ import React, { useState, useEffect } from "react";
 import {
   FlatList,
   SafeAreaView,
-  StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
+  Alert,
+  View,
 } from "react-native";
 import COLORS from "../constants/colors";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-//import { Axios, note_endpoints } from "../constants/axios";
+import { AxiosInstance, categoryEndpoints } from "../config/axios.js";
 import { useIsFocused } from "@react-navigation/native";
 import Icon from "react-native-vector-icons/FontAwesome";
+import ModalCat from "../components/ModalCat"; // Asegúrate de que la ruta es correcta
 
-const DATA = [
-  {
-    _id: "bd7acbea-c1b1-46c2-aed5-3ad53abb28ba",
-    title: "Vegano",
-  },
-  {
-    _id: "3ac68afc-c605-48d3-a4f8-fbd91aa97f63",
-    title: "Carnivoro",
-  },
-  {
-    _id: "58694a0f-3da1-471f-bd96-145571e29d72",
-    title: "Mariscos",
-  },
-];
-
-const Item = ({ item, onPress, backgroundColor, textColor }) => (
-  <TouchableOpacity
-    onPress={onPress}
-    style={[styles.item, { backgroundColor }]}
-  >
-    <Text style={[styles.title, { color: textColor }]}>{item.title}</Text>
-    <Icon name="close" size={25} color={COLORS.white} />
-  </TouchableOpacity>
+const Item = ({
+  item,
+  onPress,
+  onEdit,
+  onDelete,
+  backgroundColor,
+  textColor,
+}) => (
+  <View style={[styles.item, { backgroundColor }]}>
+    <TouchableOpacity onPress={onPress} style={{ flex: 1 }}>
+      <Text style={[styles.title, { color: textColor }]}>{item.name}</Text>
+    </TouchableOpacity>
+    <TouchableOpacity onPress={onEdit} style={{ marginRight: 5 }}>
+      <Icon name="pencil" size={20} color={COLORS.white} />
+    </TouchableOpacity>
+    <TouchableOpacity onPress={onDelete}>
+      <Icon name="close" size={25} color={COLORS.white} />
+    </TouchableOpacity>
+  </View>
 );
 
-const App = ({ setToggleCat }) => {
+const Cathorisonal = ({ setToggleCat, refresh, onCategoryDeleted }) => {
   const isFocused = useIsFocused();
   const [selectedId, setSelectedId] = useState();
-  const [categories, setCategories] = useState(DATA);
+  const [categories, setCategories] = useState([]);
   const [token, setToken] = useState("");
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editingCategory, setEditingCategory] = useState(null);
 
-  // const getCategories = async (token) => {
+  const getCategories = async (token) => {
+    try {
+      const response = await AxiosInstance.get(
+        `${categoryEndpoints.baseUrl}/user`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      console.log(response.data);
+      setCategories(response.data.categories);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const getSession = async () => {
+    try {
+      const storedToken = await AsyncStorage.getItem("token");
+      setToken(storedToken);
+      getCategories(storedToken);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    if (isFocused) {
+      getSession();
+    }
+  }, [isFocused, refresh]);
+
+  const deleteCategory = async (categoryId) => {
+    try {
+      await AxiosInstance.delete(`${categoryEndpoints.baseUrl}/${categoryId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setCategories((prev) => prev.filter((cat) => cat._id !== categoryId));
+      Alert.alert("Category deleted");
+    } catch (error) {
+      console.error(error);
+      Alert.alert("Error", "Could not delete category");
+    }
+  };
+
   //   try {
-  //     await Axios.get(note_endpoints.getCategories, {
-  //       headers: {
-  //         Authorization: `Bearer ${token}`,
-  //       },
-  //     }).then((response) => {
-  //       setCategories(response.data.categories);
-  //     });
+  //     await AxiosInstance.put(
+  //       `${categoryEndpoints.baseUrl}/${categoryId}`,
+  //       { name: newName },
+  //       {
+  //         headers: {
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //       }
+  //     );
+  //     setCategories((prev) =>
+  //       prev.map((cat) =>
+  //         cat._id === categoryId ? { ...cat, name: newName } : cat
+  //       )
+  //     );
+  //     Alert.alert("Category updated");
   //   } catch (error) {
-  //     console.log(error);
+  //     console.error(error);
+  //     Alert.alert("Error", "Could not update category");
   //   }
   // };
-  // const getToken = async () => {
-  //   await AsyncStorage.getItem("token").then((token) => {
-  //     setToken(token);
-  //     getCategories(token);
-  //   });
-  // };
-
-  // useEffect(() => {
-  //   if (isFocused) {
-  //     getToken();
-  //   }
-  // }, [isFocused]);
 
   const renderItem = ({ item }) => {
     const backgroundColor =
@@ -87,6 +131,24 @@ const App = ({ setToggleCat }) => {
             setToggleCat(item.name);
           }
         }}
+        onEdit={() => {
+          setEditingCategory(item);
+          setEditModalVisible(true);
+        }}
+        onDelete={() => {
+          Alert.alert(
+            "WARNING",
+            "Are you sure you want to delete this category? This will delete all the recipes with this category",
+            [
+              { text: "Cancel", style: "cancel" },
+              {
+                text: "Delete",
+                style: "destructive",
+                onPress: () => deleteCategory(item._id),
+              },
+            ]
+          );
+        }}
         backgroundColor={backgroundColor}
         textColor={color}
       />
@@ -96,12 +158,27 @@ const App = ({ setToggleCat }) => {
   return (
     <SafeAreaView style={styles.container}>
       <FlatList
-        horizontal={true}
+        horizontal
         data={categories}
         renderItem={renderItem}
         keyExtractor={(item) => item._id}
         extraData={selectedId}
       />
+
+      {/* Modal de edición reutilizando ModalCat */}
+      {editModalVisible && editingCategory && (
+        <ModalCat
+          state={editModalVisible}
+          onClose={() => setEditModalVisible(false)}
+          onCategoryCreated={() => {
+            // Aquí se actualiza la lista después de editar
+            getSession();
+          }}
+          editing={true}
+          initialName={editingCategory.name}
+          categoryId={editingCategory._id}
+        />
+      )}
     </SafeAreaView>
   );
 };
@@ -109,11 +186,9 @@ const App = ({ setToggleCat }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    //marginTop: StatusBar.currentHeight || 0,
     marginTop: 12,
   },
   item: {
-    display: "flex",
     flexDirection: "row",
     padding: 10,
     marginHorizontal: 5,
@@ -128,4 +203,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default App;
+export default Cathorisonal;
