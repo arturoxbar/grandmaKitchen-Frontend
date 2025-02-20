@@ -67,7 +67,9 @@ const CreateEdit = ({ route, navigation }) => {
       steps: concatenatedSteps,
       ingridients: concatenatedIngredients,
       categories: category,
-      image: imageUrl, // Agregar la URL de la imagen al body
+      image: imageUrl
+        ? imageUrl
+        : "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d9/Icon-round-Question_mark.svg/1200px-Icon-round-Question_mark.svg.png", // Agregar la URL de la imagen al body
     };
 
     try {
