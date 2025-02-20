@@ -82,7 +82,6 @@ const Login = ({ navigation }) => {
                 backgroundColor: COLORS.paper,
                 width: "100%",
                 height: "100%",
-                borderTopRightRadius: 120,
                 paddingTop: 50,
                 alignItems: "center",
               }}
@@ -150,15 +149,24 @@ const Login = ({ navigation }) => {
                   width: "78%",
                 }}
               >
-                <Text
+                <TouchableOpacity
                   style={{
                     color: COLORS.strong_blue,
                     fontWeight: "bold",
                     fontSize: 16,
                   }}
                 >
-                  Forget your Password?
-                </Text>
+                  <Text
+                    style={{
+                      color: COLORS.strong_blue,
+                      fontWeight: "bold",
+                      fontSize: 16,
+                    }}
+                    onPress={() => navigation.navigate("RecoverPassword")}
+                  >
+                    Forgot your password ?
+                  </Text>
+                </TouchableOpacity>
               </View>
 
               <View style={{ width: "78%" }}>
