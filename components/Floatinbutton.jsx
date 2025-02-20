@@ -1,124 +1,102 @@
-import React, { useState } from "react";
-import {
-  StyleSheet,
-  Text,
-  View,
-  SafeAreaView,
-  TextInput,
-  Image,
-  TouchableOpacity,
-  ScrollView,
-  Animated,
-} from "react-native";
+import React, { useState, useRef } from "react";
+import { StyleSheet, View, TouchableOpacity, Animated } from "react-native";
+import PropTypes from "prop-types";
 import Icon from "react-native-vector-icons/FontAwesome";
 import COLORS from "../constants/colors";
 import { useNavigation } from "@react-navigation/native";
+import ModalCat from "./ModalCat.jsx";
 
-const Floatinbutton = ({ setToggleFav }) => {
+const Floatinbutton = ({
+  setToggleFav,
+  onCategoryCreated,
+  onCategoryDeleted,
+}) => {
   const navigation = useNavigation();
-
   const [infav, setInfav] = useState(false);
-  const [icon_1] = useState(new Animated.Value(20));
-  const [icon_2] = useState(new Animated.Value(20));
-  const [icon_3] = useState(new Animated.Value(20));
-  const [icon_4] = useState(new Animated.Value(20));
-
   const [pop, setPop] = useState(false);
+  const [isModalVisible, setIsModalVisible] = useState(false);
 
-  const popIn = () => {
-    setPop(true);
-    Animated.timing(icon_1, {
-      toValue: 320,
-      duration: 500,
-      useNativeDriver: false,
-    }).start();
-    Animated.timing(icon_2, {
-      toValue: 250,
-      duration: 500,
-      useNativeDriver: false,
-    }).start();
-    Animated.timing(icon_3, {
-      toValue: 180,
-      duration: 500,
-      useNativeDriver: false,
-    }).start();
-    Animated.timing(icon_4, {
-      toValue: 110,
-      duration: 500,
-      useNativeDriver: false,
-    }).start();
+  const icons = useRef([
+    new Animated.Value(-60),
+    new Animated.Value(-60),
+    new Animated.Value(-60),
+    new Animated.Value(-60),
+  ]).current;
+
+  const createRecipe = () => navigation.navigate("CreateRecipe");
+  const userSettings = () => navigation.navigate("User");
+
+  const toggleMenu = () => {
+    setPop((prev) => !prev);
+    if (!pop) {
+      animateIcons([320, 250, 180, 110]);
+    } else {
+      animateIcons([-60, -60, -60, -60]);
+    }
   };
 
-  const popOut = () => {
-    setPop(false);
-    Animated.timing(icon_1, {
-      toValue: -60,
-      duration: 500,
-      useNativeDriver: false,
-    }).start();
-    Animated.timing(icon_2, {
-      toValue: -60,
-      duration: 500,
-      useNativeDriver: false,
-    }).start();
-    Animated.timing(icon_3, {
-      toValue: -60,
-      duration: 500,
-      useNativeDriver: false,
-    }).start();
-    Animated.timing(icon_4, {
-      toValue: -60,
-      duration: 500,
-      useNativeDriver: false,
-    }).start();
+  const animateIcons = (values) => {
+    const animations = icons.map((icon, index) =>
+      Animated.timing(icon, {
+        toValue: values[index],
+        duration: 250,
+        useNativeDriver: false,
+      })
+    );
+    Animated.sequence(animations).start();
   };
 
   return (
     <View>
-      <Animated.View style={[styles.circle, { bottom: icon_1 }]}>
-        <TouchableOpacity
-          onPress={() => {
+      {icons.map((icon, index) => {
+        const actions = [
+          () => {
             setToggleFav(!infav);
             setInfav(!infav);
-          }}
-        >
-          {infav === true ? (
-            <Icon name="star-o" size={25} color={COLORS.yellow} />
-          ) : (
-            <Icon name="star" size={25} color={COLORS.yellow} />
-          )}
-        </TouchableOpacity>
-      </Animated.View>
+          },
+          userSettings,
+          createRecipe,
+          () => setIsModalVisible(true),
+        ];
+        const iconNames = [
+          "bookmark-o",
+          "user-circle",
+          "sticky-note-o",
+          "tags",
+        ];
 
-      <Animated.View style={[styles.circle, { bottom: icon_2 }]}>
-        <TouchableOpacity onPress={async () => {}}>
-          <Icon name="user-circle" size={25} color={COLORS.yellow} />
-        </TouchableOpacity>
-      </Animated.View>
+        return (
+          <Animated.View key={index} style={[styles.circle, { bottom: icon }]}>
+            <TouchableOpacity onPress={actions[index]}>
+              <Icon
+                name={index === 0 && infav ? "bookmark" : iconNames[index]}
+                size={25}
+                color={COLORS.yellow}
+              />
+            </TouchableOpacity>
+          </Animated.View>
+        );
+      })}
 
-      <Animated.View style={[styles.circle, { bottom: icon_3 }]}>
-        <TouchableOpacity onPress={() => {}}>
-          <Icon name="sticky-note-o" size={25} color={COLORS.yellow} />
-        </TouchableOpacity>
-      </Animated.View>
-
-      <Animated.View style={[styles.circle, { bottom: icon_4 }]}>
-        <TouchableOpacity onPress={async () => {}}>
-          <Icon name="tags" size={25} color={COLORS.yellow} />
-        </TouchableOpacity>
-      </Animated.View>
-
-      <TouchableOpacity
-        style={styles.circle}
-        onPress={() => {
-          pop === false ? popIn() : popOut();
-        }}
-      >
+      <TouchableOpacity style={styles.circle} onPress={toggleMenu}>
         <Icon name="plus" size={25} color={COLORS.yellow} />
       </TouchableOpacity>
+
+      <ModalCat
+        state={isModalVisible}
+        onClose={() => {
+          setIsModalVisible(false);
+        }}
+        onCategoryCreated={onCategoryCreated}
+      />
     </View>
   );
 };
+
+// Floatinbutton.propTypes = {
+//   setToggleFav: PropTypes.func.isRequired,
+//   onCategoryCreated: PropTypes.func.isRequired,
+// };
 
 export default Floatinbutton;
 
@@ -137,3 +115,4 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 });
+
