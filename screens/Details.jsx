@@ -1,147 +1,182 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   SafeAreaView,
-  ScrollView,
-  View,
   Text,
+  View,
+  TextInput,
   Image,
+  TouchableOpacity,
+  ScrollView,
   ImageBackground,
-  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+  Alert,
 } from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome";
+import Btn from "../components/Btn";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import Seletcat from "../components/Selectcat";
+import IngredientsSection from "../components/Ingridients.jsx";
+import StepsSection from "../components/Steps";
 import COLORS from "../constants/colors";
+import textura from "../assets/paper.jpg";
+import styles from "../styles/CreateEdit.js";
+import { AxiosInstance, recipeEndpoints } from "../config/axios";
 
-const RecipeDetails = ({ route, navigation }) => {
-  // Se espera que la pantalla reciba en route.params un objeto "recipe"
-  const { recipe } = route.params || {};
-  const recipeData = recipe || {
-    title: "Do you want chicken?",
-    image:
-      "https://hips.hearstapps.com/hmg-prod/images/roast-chicken-recipe-2-66b231ac9a8fb.jpg?crop=0.503xw:1.00xh;0.309xw,0&resize=1200:*",
-    description:
-      "This is a delicious roasted chicken recipe passed down from grandma. Enjoy the tender meat and crispy skin with your favorite sides.",
-    ingredients: ["Chicken", "Salt", "Pepper", "Herbs"],
-    steps: [
-      "Preheat the oven to 200°C (400°F).",
-      "Season the chicken with salt, pepper, and herbs.",
-      "Roast the chicken for 1 hour until golden and crispy.",
-    ],
+const CreateEdit = ({ route, navigation }) => {
+  const recipeToEdit = route.params?.recipe || null;
+
+  const [title, setTitle] = useState(recipeToEdit?.title || "");
+  const [description, setDescription] = useState(
+    recipeToEdit?.description || ""
+  );
+  const [category, setCategory] = useState(recipeToEdit?.category || []);
+  const [steps, setSteps] = useState(
+    recipeToEdit?.steps
+      ? recipeToEdit.steps.split("/ ").map((step) => step.trim())
+      : []
+  );
+  const [ingredients, setIngredients] = useState(
+    recipeToEdit?.ingredients
+      ? recipeToEdit.ingredients.split("/ ").map((ing) => ing.trim())
+      : []
+  );
+  const [imageUrl, setImageUrl] = useState(recipeToEdit?.image || "");
+  const [token, setToken] = useState("");
+
+  useEffect(() => {
+    const getSession = async () => {
+      const storedToken = await AsyncStorage.getItem("token");
+      setToken(storedToken);
+    };
+    getSession();
+  }, []);
+
+  const handleSave = async () => {
+    if (!title || !description) {
+      alert("Please fill all the fields");
+      return;
+    }
+
+    const concatenatedSteps = steps.join("/ ");
+    const concatenatedIngredients = ingredients.join("/ ");
+
+    const body = {
+      name: title,
+      description,
+      steps: concatenatedSteps,
+      ingridients: concatenatedIngredients,
+      categories: category,
+      image: imageUrl
+        ? imageUrl
+        : "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d9/Icon-round-Question_mark.svg/1200px-Icon-round-Question_mark.svg.png", // Agregar la URL de la imagen al body
+    };
+
+    try {
+      let response;
+      if (recipeToEdit) {
+        response = await AxiosInstance.put(
+          `${recipeEndpoints.baseUrl}/${recipeToEdit.id}`,
+          body,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        console.log(body);
+      } else {
+        response = await AxiosInstance.post(recipeEndpoints.baseUrl, body, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      }
+
+      if (!recipeToEdit) {
+        setTitle("");
+        setDescription("");
+        setCategory([]);
+        setIngredients([]);
+        setSteps([]);
+        setImageUrl(""); // Limpiar la URL de la imagen después de crear la receta
+      }
+
+      navigation.navigate("Home");
+    } catch (error) {
+      //console.error(error);
+      console.log(error);
+      const errors = error.response.data.message;
+      Alert.alert("error", errors);
+      console.log(errors);
+    }
   };
-
-  // Convertir ingredientes y pasos a array si es necesario (si ya vienen como string)
-  const ingredientsArray = Array.isArray(recipeData.ingredients)
-    ? recipeData.ingredients
-    : recipeData.ingredients
-    ? recipeData.ingredients.split("/ ").map((item) => item.trim())
-    : [];
-
-  const stepsArray = Array.isArray(recipeData.steps)
-    ? recipeData.steps
-    : recipeData.steps
-    ? recipeData.steps.split("/ ").map((step) => step.trim())
-    : [];
 
   return (
     <SafeAreaView style={styles.container}>
-      <ImageBackground
-        source={require("../assets/paper.jpg")}
-        style={styles.background}
-      >
-        <ScrollView contentContainerStyle={styles.content}>
-          {recipeData.image ? (
-            <Image source={{ uri: recipeData.image }} style={styles.image} />
-          ) : null}
+      <ImageBackground source={textura} style={styles.background}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={{ flex: 1 }}
+        >
+          <View style={styles.header}>
+            <TouchableOpacity onPress={() => navigation.navigate("Home")}>
+              <Icon name="arrow-left" size={25} color={COLORS.white} />
+            </TouchableOpacity>
+          </View>
 
-          <Text style={styles.title}>{recipeData.title}</Text>
+          <ScrollView contentContainerStyle={styles.content}>
+            {imageUrl ? (
+              <Image source={{ uri: imageUrl }} style={styles.image} />
+            ) : (
+              <Text style={styles.placeholderText}>No image selected</Text>
+            )}
 
-          <Text style={styles.sectionTitle}>Description</Text>
-          <Text style={styles.description}>{recipeData.description}</Text>
+            <TextInput
+              placeholder="Image URL"
+              placeholderTextColor={COLORS.yellow}
+              style={styles.imageInput}
+              onChangeText={setImageUrl}
+              value={imageUrl}
+            />
 
-          <Text style={styles.sectionTitle}>Ingredients</Text>
-          {ingredientsArray.map((item, index) => (
-            <View key={index} style={styles.listItem}>
-              <Icon
-                name="circle"
-                size={8}
-                color="#5B3A29"
-                style={styles.bullet}
-              />
-              <Text style={styles.listText}>{item}</Text>
-            </View>
-          ))}
+            <TextInput
+              placeholder="Recipe Name"
+              placeholderTextColor={COLORS.yellow}
+              style={styles.titleInput}
+              maxLength={25}
+              textAlign="center"
+              onChangeText={setTitle}
+              value={title}
+            />
 
-          {/* Pasos */}
-          <Text style={styles.sectionTitle}>Steps</Text>
-          {stepsArray.map((step, index) => (
-            <View key={index} style={styles.listItem}>
-              <Text style={styles.stepNumber}>{index + 1}.</Text>
-              <Text style={styles.listText}>{step}</Text>
-            </View>
-          ))}
-        </ScrollView>
+            <Seletcat setCategory={setCategory} selectedCategory={category} />
+
+            <TextInput
+              placeholder="Recipe Description"
+              placeholderTextColor={COLORS.yellow}
+              style={styles.descriptionInput}
+              maxLength={150}
+              multiline
+              numberOfLines={4}
+              onChangeText={setDescription}
+              value={description}
+            />
+
+            <IngredientsSection
+              ingredients={ingredients}
+              onChangeIngredients={setIngredients}
+            />
+            <StepsSection steps={steps} onChangeSteps={setSteps} />
+
+            <Btn
+              borderColorbtn={COLORS.yellow}
+              Colorbtn={COLORS.yellow}
+              textColor={COLORS.strong_blue}
+              btnLabel={recipeToEdit ? "Save Changes" : "Create Recipe"}
+              Press={handleSave}
+            />
+          </ScrollView>
+        </KeyboardAvoidingView>
       </ImageBackground>
     </SafeAreaView>
   );
 };
 
-export default RecipeDetails;
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  background: {
-    flex: 1,
-    resizeMode: "cover",
-  },
-  content: {
-    padding: 20,
-  },
-  image: {
-    width: "100%",
-    height: 250,
-    borderRadius: 10,
-    marginBottom: 15,
-  },
-  title: {
-    fontSize: 32,
-    fontFamily: "serif",
-    fontWeight: "bold",
-    color: "#5B3A29", // tono marrón oscuro
-    textAlign: "center",
-    marginBottom: 15,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontFamily: "serif",
-    fontWeight: "bold",
-    color: "#5B3A29",
-    marginTop: 20,
-    marginBottom: 10,
-  },
-  description: {
-    fontSize: 18,
-    fontFamily: "serif",
-    color: "#5B3A29",
-    lineHeight: 24,
-  },
-  listItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  bullet: {
-    marginRight: 8,
-  },
-  listText: {
-    fontSize: 18,
-    fontFamily: "serif",
-    color: "#5B3A29",
-  },
-  stepNumber: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginRight: 8,
-    color: "#5B3A29",
-  },
-});
+export default CreateEdit;
