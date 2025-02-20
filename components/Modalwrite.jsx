@@ -69,3 +69,4 @@ const Modalwrite = ({ Modalicon, title }) => {
 };
 
 export default Modalwrite;
+
