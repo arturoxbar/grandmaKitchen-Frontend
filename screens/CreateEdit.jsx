@@ -10,72 +10,102 @@ import {
   ImageBackground,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome";
 import Btn from "../components/Btn";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Seletcat from "../components/Selectcat";
-import IngredientsSection from "../components/Ingridients.jsx"; // si ya lo tienes separado
-import StepsSection from "../components/Steps"; // Importamos el nuevo componente
+import IngredientsSection from "../components/Ingridients.jsx";
+import StepsSection from "../components/Steps";
 import COLORS from "../constants/colors";
 import textura from "../assets/paper.jpg";
 import styles from "../styles/CreateEdit.js";
 import { AxiosInstance, recipeEndpoints } from "../config/axios";
 
-const CreateEdit = ({ navigation }) => {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [category, setCategory] = useState([]);
-  const [steps, setSteps] = useState([]);
+const CreateEdit = ({ route, navigation }) => {
+  const recipeToEdit = route.params?.recipe || null;
+
+  const [title, setTitle] = useState(recipeToEdit?.title || "");
+  const [description, setDescription] = useState(
+    recipeToEdit?.description || ""
+  );
+  const [category, setCategory] = useState(recipeToEdit?.category || []);
+  const [steps, setSteps] = useState(
+    recipeToEdit?.steps
+      ? recipeToEdit.steps.split("/ ").map((step) => step.trim())
+      : []
+  );
+  const [ingredients, setIngredients] = useState(
+    recipeToEdit?.ingredients
+      ? recipeToEdit.ingredients.split("/ ").map((ing) => ing.trim())
+      : []
+  );
+  const [imageUrl, setImageUrl] = useState(recipeToEdit?.image || "");
   const [token, setToken] = useState("");
-  const [ingredients, setIngredients] = useState([]);
 
   useEffect(() => {
     const getSession = async () => {
-      await AsyncStorage.getItem("token").then((token) => {
-        setToken(token);
-      });
+      const storedToken = await AsyncStorage.getItem("token");
+      setToken(storedToken);
     };
     getSession();
   }, []);
 
-  const CreateRecipe = async () => {
-    if (!title || !description || !priority) {
+  const handleSave = async () => {
+    if (!title || !description) {
       alert("Please fill all the fields");
       return;
     }
-    const concatenatedSteps = steps
-      .map((step, index) => `${index + 1}. ${step}`)
-      .join(", ");
-    const concatenatedIngredients = ingredients
-      .map((ing, index) => `${index + 1}. ${ing}`)
-      .join(", ");
+
+    const concatenatedSteps = steps.join("/ ");
+    const concatenatedIngredients = ingredients.join("/ ");
 
     const body = {
       name: title,
       description,
       steps: concatenatedSteps,
       ingridients: concatenatedIngredients,
+      categories: category,
+      image: imageUrl, // Agregar la URL de la imagen al body
     };
 
     try {
-      console.log("recipe data:", body);
-      const response = await AxiosInstance.post(recipeEndpoints.create, body, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      console.log(response.data);
-      setCategory("");
-      setDescription("");
-      setIngredients("");
-      setSteps("");
-      setTitle("");
+      let response;
+      if (recipeToEdit) {
+        response = await AxiosInstance.put(
+          `${recipeEndpoints.baseUrl}/${recipeToEdit.id}`,
+          body,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        console.log(body);
+      } else {
+        response = await AxiosInstance.post(recipeEndpoints.baseUrl, body, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      }
+
+      if (!recipeToEdit) {
+        setTitle("");
+        setDescription("");
+        setCategory([]);
+        setIngredients([]);
+        setSteps([]);
+        setImageUrl(""); // Limpiar la URL de la imagen después de crear la receta
+      }
+
       navigation.navigate("Home");
     } catch (error) {
-      console.error(error);
+      //console.error(error);
+      console.log(error);
+      const errors = error.response.data.message;
+      Alert.alert("error", errors);
+      console.log(errors);
     }
   };
+
   return (
     <SafeAreaView style={styles.container}>
       <ImageBackground source={textura} style={styles.background}>
@@ -90,9 +120,18 @@ const CreateEdit = ({ navigation }) => {
           </View>
 
           <ScrollView contentContainerStyle={styles.content}>
-            <Image
-              source={require("../assets/polloXD.jpg")}
-              style={styles.image}
+            {imageUrl ? (
+              <Image source={{ uri: imageUrl }} style={styles.image} />
+            ) : (
+              <Text style={styles.placeholderText}>No image selected</Text>
+            )}
+
+            <TextInput
+              placeholder="Image URL"
+              placeholderTextColor={COLORS.yellow}
+              style={styles.imageInput}
+              onChangeText={setImageUrl}
+              value={imageUrl}
             />
 
             <TextInput
@@ -102,34 +141,34 @@ const CreateEdit = ({ navigation }) => {
               maxLength={25}
               textAlign="center"
               onChangeText={setTitle}
+              value={title}
             />
 
-            <Seletcat setCategory={setCategory} />
+            <Seletcat setCategory={setCategory} selectedCategory={category} />
 
             <TextInput
               placeholder="Recipe Description"
               placeholderTextColor={COLORS.yellow}
               style={styles.descriptionInput}
               maxLength={150}
-              editable
               multiline
               numberOfLines={4}
               onChangeText={setDescription}
+              value={description}
             />
 
             <IngredientsSection
               ingredients={ingredients}
               onChangeIngredients={setIngredients}
             />
-
             <StepsSection steps={steps} onChangeSteps={setSteps} />
 
             <Btn
               borderColorbtn={COLORS.yellow}
               Colorbtn={COLORS.yellow}
               textColor={COLORS.strong_blue}
-              btnLabel="Create Recipe"
-              Press={CreateRecipe}
+              btnLabel={recipeToEdit ? "Save Changes" : "Create Recipe"}
+              Press={handleSave}
             />
           </ScrollView>
         </KeyboardAvoidingView>
